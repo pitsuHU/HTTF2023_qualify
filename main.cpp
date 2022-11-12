@@ -62,9 +62,10 @@ int N = 100;
 int E = N*(N-1)/2;
 int Q = 100;
 vector<string> G;
-int score = 0;
+P score(0,0);
 vector<int> one_count;
 vector<int> operated;
+multiset<int> operated_dif;
 
 int calc_1_num(int cnt){
     return (cnt*(1-error)) + ((E-cnt)*error);
@@ -87,8 +88,10 @@ void make_first(){
     }
     for(int i=1; i<M; i++){
         int res = operated[i]-operated[i-1];
-        score += res*res;
+        operated_dif.emplace(res);
+        score.second += res*res;
     }
+    score.first = *operated_dif.rbegin();
 }
 
 
@@ -105,8 +108,16 @@ void operation(){
             area = one_count[idx] - 0;
         }
         pre_pos = one_count[idx];
-        if(idx != 0) move_sum -= (operated[idx]-operated[idx-1])*(operated[idx]-operated[idx-1]);
-        move_sum -= (operated[idx+1]-operated[idx])*(operated[idx+1]-operated[idx]);
+        if(idx != 0){
+            int res = operated[idx]-operated[idx-1];
+            operated_dif.erase(operated_dif.find(res));
+            move_sum -= res*res;
+        }
+        if(idx != M-1){
+            int res = operated[idx+1]-operated[idx];
+            operated_dif.erase(operated_dif.find(res));
+            move_sum -= res*res;
+        }
         int move = randXor()%area;
         one_count[idx] -= move;
         operated[idx] = calc_1_num(one_count[idx]);
@@ -119,21 +130,51 @@ void operation(){
             area = E - one_count[idx];
         }
         pre_pos = one_count[idx];
-        move_sum -= (operated[idx]-operated[idx-1])*(operated[idx]-operated[idx-1]);
-        if(idx != M-1) move_sum -= (operated[idx+1]-operated[idx])*(operated[idx+1]-operated[idx]);
+        if(idx != 0){
+            int res = operated[idx]-operated[idx-1];
+            operated_dif.erase(operated_dif.find(res));
+            move_sum -= res*res;
+        }
+        if(idx != M-1){
+            int res = operated[idx+1]-operated[idx];
+            operated_dif.erase(operated_dif.find(res));
+            move_sum -= res*res;
+        }
         int move = randXor()%area;
         one_count[idx] += move;
         operated[idx] = calc_1_num(one_count[idx]);
     }
-    if(idx != 0) move_sum += (operated[idx]-operated[idx-1])*(operated[idx]-operated[idx-1]);
-    if(idx != M-1) move_sum += (operated[idx+1]-operated[idx])*(operated[idx+1]-operated[idx]);
-    if(move_sum > 0){
+    vector<int> added;
+    if(idx != 0){
+        int res = operated[idx]-operated[idx-1];
+        operated_dif.emplace(res);
+        added.emplace_back(res);
+        move_sum += res*res;
+    }
+    if(idx != M-1){
+        int res = operated[idx+1]-operated[idx];
+        operated_dif.emplace(res);
+        added.emplace_back(res);
+        move_sum += res*res;
+    }
+    if(chmax(score,P(*operated_dif.begin(),score.second+move_sum))){
         // 更新
-        score += move_sum;
+        score.second += move_sum;
     }else{
         // 戻す
         one_count[idx] = pre_pos;
         operated[idx] = calc_1_num(one_count[idx]);
+        for(auto x: added){
+            operated_dif.erase(operated_dif.find(x));
+        }
+        if(idx != 0){
+            int res = operated[idx]-operated[idx-1];
+            operated_dif.emplace(res);
+        }
+        if(idx != M-1){
+            int res = operated[idx+1]-operated[idx];
+            operated_dif.emplace(res);
+        }
     }
 }
 
@@ -185,12 +226,12 @@ int main(){
     input();
     make_first();
     solve();
-    for(int i=0; i<M; i++){
-        cout << operated[i] << endl;
-    }
-    // first_output();
-    // for(int i=0; i<Q; i++){
-    //     query();
+    // for(int i=0; i<M; i++){
+    //     cout << operated[i] << endl;
     // }
+    first_output();
+    for(int i=0; i<Q; i++){
+        query();
+    }
     return 0;
 }
