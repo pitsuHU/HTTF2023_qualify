@@ -62,12 +62,9 @@ int N = 100;
 int E = N*(N-1)/2;
 int Q = 100;
 vector<string> G;
+int score = 0;
 vector<int> one_count;
-P now_score(-1,0);
-P best_score(-1,0);
-vector<P> operated;
-vector<int> best_one_count;
-vector<P> best_operated;
+vector<int> operated;
 
 int calc_1_num(int cnt){
     return (cnt*(1-error)) + ((E-cnt)*error);
@@ -76,71 +73,67 @@ int calc_1_num(int cnt){
 void input(){
     cin >> M >> error;
     G = vector<string>(M);
-    best_one_count = vector<int>(M);
-    best_operated = vector<P>(M);
+    one_count = vector<int>(M);
+    operated = vector<int>(M);
 }
 
-
-
-void calc_operated(vector<int> &A){
-    vector<P> nxt_operated;
+void make_first(){
     for(int i=0; i<M; i++){
-        nxt_operated.emplace_back(calc_1_num(A[i]),i);
+        one_count[i] = randXor()%(E+1);
     }
-    sort(nxt_operated.begin(),nxt_operated.end());
-    operated = nxt_operated;
-}
-
-P calc_score(){
-    int mn = 1e9;
-    int sum = 0;
+    sort(one_count.begin(),one_count.end());
+    for(int i=0; i<M; i++){
+        operated[i] = calc_1_num(one_count[i]);
+    }
     for(int i=1; i<M; i++){
-        int res = operated[i].first - operated[i-1].first;
-        sum += res*res;
-        chmin(mn,res);
+        int res = operated[i]-operated[i-1];
+        score += res*res;
     }
-    return P(mn,sum);
-}
-
-void random_first(){
-    for(int i=0; i<M; i++){
-        best_one_count[i] = randXor()%(E+1);
-    }
-    sort(best_one_count.begin(),best_one_count.end());
-    calc_operated(best_one_count);
 }
 
 
-void operate(){
-    int operating_pos = randXor()%M;
+void operation(){
+    int idx = randXor()%M;
+    int move_sum = 0;
+    int pre_pos;
     if(randXor()%2 == 0){
         // 左に動く
         int area;
-        if(operating_pos != 0){
-            area = one_count[operating_pos] - one_count[operating_pos-1];
+        if(idx != 0){
+            area = one_count[idx] - one_count[idx-1];
         }else{
-            area = one_count[operating_pos] - 0;
+            area = one_count[idx] - 0;
         }
-        one_count[operating_pos] -= randXor()%area;
-    }else{ 
+        pre_pos = one_count[idx];
+        if(idx != 0) move_sum -= (operated[idx]-operated[idx-1])*(operated[idx]-operated[idx-1]);
+        move_sum -= (operated[idx+1]-operated[idx])*(operated[idx+1]-operated[idx]);
+        int move = randXor()%area;
+        one_count[idx] -= move;
+        operated[idx] = calc_1_num(one_count[idx]);
+    }else{
         // 右に動く
         int area;
-        if(operating_pos != M-1){
-            area = one_count[operating_pos+1] - one_count[operating_pos];
+        if(idx != M-1){
+            area = one_count[idx+1] - one_count[idx];
         }else{
-            area = E - one_count[operating_pos];
+            area = E - one_count[idx];
         }
-        one_count[operating_pos] -= randXor()%area;
+        pre_pos = one_count[idx];
+        move_sum -= (operated[idx]-operated[idx-1])*(operated[idx]-operated[idx-1]);
+        if(idx != M-1) move_sum -= (operated[idx+1]-operated[idx])*(operated[idx+1]-operated[idx]);
+        int move = randXor()%area;
+        one_count[idx] += move;
+        operated[idx] = calc_1_num(one_count[idx]);
     }
-    calc_operated(one_count);
-}
-
-
-void judge_best(P score){
-    if(score > best_score){
-        best_score = score;
-        best_one_count = one_count;
-        best_operated = operated;
+    if(idx != 0) move_sum += (operated[idx]-operated[idx-1])*(operated[idx]-operated[idx-1]);
+    if(idx != M-1) move_sum += (operated[idx+1]-operated[idx])*(operated[idx+1]-operated[idx]);
+    if(move_sum > 0){
+        // 更新
+        score += move_sum;
+    }else{
+        // 戻す
+        one_count[idx] = pre_pos;
+        operated[idx] = calc_1_num(one_count[idx]);
     }
 }
 
@@ -149,18 +142,15 @@ void solve(){
     double time = 0.0;
     const static double ENDTIME = 4.5;
     do{
-        one_count = best_one_count;
-        operate();
-        P score = calc_score();
-        judge_best(score);
+        operation();
         time = (duration_cast<microseconds>(system_clock::now() - STARTCLOCK).count() * 1e-6);
     }while(time < ENDTIME);
 }
 
 void first_output(){
     cout << N << endl;
-    for(int i=0; i<N; i++){
-        G[i] = string('1',best_one_count[i]) + string('0',E-best_one_count[i]);
+    for(int i=0; i<M; i++){
+        G[i] = string(one_count[i],'1') + string(E-one_count[i],'0');
         cout << G[i] << endl;
     }
 }
@@ -173,31 +163,34 @@ void query(){
     for(int i=0; i<E; i++){
         if(S[i] == '1') cnt++;
     }
-    int res = lower_bound(best_operated.begin(),best_operated.end(),cnt) - best_operated.begin();
+    int res = lower_bound(operated.begin(),operated.end(),cnt) - operated.begin();
     if(res == M){
-        cout << best_operated[M-1].second << endl;
+        cout << M-1 << endl;
         return;
     }
     if(res == 0){
-        cout << best_operated[0].second << endl;
+        cout << 0 << endl;
         return;
     }
-    int dist1 = cnt - best_operated[res-1].first;
-    int dist2 = best_operated[res].first - cnt;
+    int dist1 = cnt - operated[res-1];
+    int dist2 = operated[res] - cnt;
     if(dist1 < dist2){
-        cout << best_operated[res-1].second << endl;
+        cout << res-1 << endl;
     }else{
-        cout << best_operated[res].second << endl;
+        cout << res << endl;
     }
 }
 
 int main(){
     input();
-    random_first();
+    make_first();
     solve();
-    first_output();
-    for(int i=0; i<Q; i++){
-        query();
+    for(int i=0; i<M; i++){
+        cout << operated[i] << endl;
     }
+    // first_output();
+    // for(int i=0; i<Q; i++){
+    //     query();
+    // }
     return 0;
 }
