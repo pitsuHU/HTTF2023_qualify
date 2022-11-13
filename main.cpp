@@ -66,6 +66,9 @@ P score(0,0);
 vector<int> one_count;
 vector<int> operated;
 multiset<int> operated_dif;
+int ope_cnt = 0;
+int sum_ideal = ((double)(E-M)/(M-1))*((double)(E-M)/(M-1))*(M-1);
+int sum_best = 0;
 
 int calc_1_num(int cnt){
     return (cnt*(1-error)) + ((E-cnt)*error);
@@ -89,9 +92,10 @@ void make_first(){
     for(int i=1; i<M; i++){
         int res = operated[i]-operated[i-1];
         operated_dif.emplace(res);
-        score.second += res*res;
+        sum_best += res*res;
     }
-    score.first = *operated_dif.rbegin();
+    score.second = -abs(sum_ideal-sum_best);
+    score.first = *operated_dif.begin();
 }
 
 
@@ -99,6 +103,13 @@ void operation(){
     int idx = randXor()%M;
     int move_sum = 0;
     int pre_pos;
+    // if(ope_cnt%100000 == 0){
+    //     for(int i=0; i<M; i++){
+    //         cout << operated[i] << " \n"[i+1 == M];
+    //     }
+    //     // cout << score.first << " " << score.second << " " << *operated_dif.begin() << " " << score.second+move_sum << endl;
+    // }
+    pre_pos = one_count[idx];
     if(randXor()%2 == 0){
         // 左に動く
         int area;
@@ -107,7 +118,6 @@ void operation(){
         }else{
             area = one_count[idx] - 0;
         }
-        pre_pos = one_count[idx];
         if(idx != 0){
             int res = operated[idx]-operated[idx-1];
             operated_dif.erase(operated_dif.find(res));
@@ -129,7 +139,6 @@ void operation(){
         }else{
             area = E - one_count[idx];
         }
-        pre_pos = one_count[idx];
         if(idx != 0){
             int res = operated[idx]-operated[idx-1];
             operated_dif.erase(operated_dif.find(res));
@@ -157,9 +166,19 @@ void operation(){
         added.emplace_back(res);
         move_sum += res*res;
     }
-    if(chmax(score,P(*operated_dif.begin(),score.second+move_sum))){
+    // if(ope_cnt%100000 == 0){
+    //     ll sum = 0;
+    //     for(int i=0; i<M; i++){
+    //         if(i) sum += (operated[i] - operated[i-1])*(operated[i] - operated[i-1]);
+    //         cout << operated[i] << " \n"[i+1 == M];
+    //     }
+    //     cout << score.second <<" " << score.second+move_sum << endl;
+    //     // cout << score.first << " " << score.second << " " << *operated_dif.begin() << " " << score.second+move_sum << endl;
+    // }
+    int nxt_sum = sum_best + move_sum;
+    if(chmax(score,P(*operated_dif.begin(),-abs(sum_ideal-nxt_sum)))){
         // 更新
-        score.second += move_sum;
+        sum_best = nxt_sum;
     }else{
         // 戻す
         one_count[idx] = pre_pos;
@@ -183,7 +202,17 @@ void solve(){
     double time = 0.0;
     const static double ENDTIME = 4.5;
     do{
+        // if(ope_cnt%10000 == 0){
+        //     ll sum = 0;
+        //     for(int i=0; i<M; i++){
+        //         if(i) sum += (operated[i] - operated[i-1])*(operated[i] - operated[i-1]);
+        //         cout << operated[i] << " \n"[i+1 == M];
+        //     }
+        //     cout << sum <<" " << score.second << endl;
+        //     // cout << score.first << " " << score.second << " " << *operated_dif.begin() << " " << score.second+move_sum << endl;
+        // }
         operation();
+        ope_cnt++;
         time = (duration_cast<microseconds>(system_clock::now() - STARTCLOCK).count() * 1e-6);
     }while(time < ENDTIME);
 }
