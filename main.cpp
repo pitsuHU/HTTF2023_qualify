@@ -97,9 +97,7 @@ double calc_Eval(double x){
 
 void make_first(){
     for(int i=0; i<M; i++){
-        if(i == 0) one_count[i] = 0;
-        else if(i == M-1) one_count[i] = E;
-        else one_count[i] = randXor()%(E+1);
+        one_count[i] = randXor()%(E+1);
     }
     sort(one_count.begin(),one_count.end());
     for(int i=0; i<M; i++){
@@ -171,7 +169,7 @@ void operation(){
         dif_add.emplace_back(res);
     }
     double res = Eval();
-    if(res < 0){
+    if(res < 0 || ope_cnt%100 == 0){
         // 更新
         score += res;
         // cout << ope_cnt << " : " << score << endl;
@@ -232,8 +230,12 @@ int main(){
     make_first();
     solve();
     // cout << ope_cnt << endl;
+    // cout << ideal_dif << endl;
     // for(int i=0; i<M; i++){
-    //     cout << operated[i] << endl;
+    //     cout << one_count[i] << endl;
+    // }
+    // for(int i=1; i<M; i++){
+    //     cout << operated[i]-operated[i-1] << endl;
     // }
     first_output();
     for(int i=0; i<Q; i++){
