@@ -69,7 +69,7 @@ vector<int> one_count;
 vector<int> operated;
 
 // 評価用 (abs(log(dif/ideal_di))の合計)
-double ideal_dif = (double)(E-M)/(M-1);
+double ideal_dif;
 double score = 0;
 
 // 操作用
@@ -88,6 +88,7 @@ void input(){
     G = vector<string>(M);
     one_count = vector<int>(M);
     operated = vector<int>(M);
+    ideal_dif = (double)(E-M)/(M-1);
 }
 
 double calc_Eval(double x){
@@ -114,7 +115,7 @@ void make_first(){
 
 double Eval(){
     double dif = 0;
-    for(auto x: dif_del) dif += calc_Eval(x);
+    for(auto x: dif_del) dif -= calc_Eval(x);
     for(auto x: dif_add) dif += calc_Eval(x);
     return dif;
 }
@@ -173,6 +174,7 @@ void operation(){
     if(res < 0){
         // 更新
         score += res;
+        // cout << ope_cnt << " : " << score << endl;
     }else{
         //　戻す
         one_count[idx] = pre_pos;
@@ -226,17 +228,16 @@ void query(){
 }
 
 int main(){
-    int a = calc_Eval(0);
-    cout << a << endl;
-    // input();
-    // make_first();
-    // solve();
-    // // for(int i=0; i<M; i++){
-    // //     cout << operated[i] << endl;
-    // // }
-    // first_output();
-    // for(int i=0; i<Q; i++){
-    //     query();
+    input();
+    make_first();
+    solve();
+    // cout << ope_cnt << endl;
+    // for(int i=0; i<M; i++){
+    //     cout << operated[i] << endl;
     // }
+    first_output();
+    for(int i=0; i<Q; i++){
+        query();
+    }
     return 0;
 }
