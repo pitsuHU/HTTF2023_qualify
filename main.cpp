@@ -68,7 +68,9 @@ vector<string> G;
 vector<int> one_count;
 vector<int> operated;
 
-// 評価用
+// 評価用 (abs(log(dif/ideal_di))の合計)
+double ideal_dif = (double)(E-M)/(M-1);
+double score = 0;
 
 // 操作用
 vector<int> dif_add;
@@ -88,6 +90,10 @@ void input(){
     operated = vector<int>(M);
 }
 
+double calc_Eval(double x){
+    return abs(log(x/ideal_dif));
+}
+
 void make_first(){
     for(int i=0; i<M; i++){
         one_count[i] = randXor()%(E+1);
@@ -99,12 +105,16 @@ void make_first(){
     for(int i=1; i<M; i++){
         int res = operated[i]-operated[i-1];
         // 初期スコア計算が入る
+        score += calc_Eval(res);
     }
 }
 
 
-void Eval(){
-
+double Eval(){
+    double dif = 0;
+    for(auto x: dif_del) dif += calc_Eval(x);
+    for(auto x: dif_add) dif += calc_Eval(x);
+    return dif;
 }
 
 
@@ -131,6 +141,7 @@ void operation(){
             area = one_count[idx] - 0;
         }
         int move = randXor()%area;
+        move %= 5;
         one_count[idx] -= move;
         operated[idx] = calc_1_num(one_count[idx]);
     }else{
@@ -142,6 +153,7 @@ void operation(){
             area = E - one_count[idx];
         }
         int move = randXor()%area;
+        move %= 5;
         one_count[idx] += move;
         operated[idx] = calc_1_num(one_count[idx]);
     }
@@ -153,6 +165,15 @@ void operation(){
         int res = operated[idx+1]-operated[idx];
         dif_add.emplace_back(res);
     }
+    double res = Eval();
+    if(res < 0){
+        // 更新
+        score += res;
+    }else{
+        //　戻す
+        one_count[idx] = pre_pos;
+        operated[idx] = calc_1_num(one_count[idx]);
+    }
 }
 
 void solve(){
@@ -160,15 +181,6 @@ void solve(){
     double time = 0.0;
     const static double ENDTIME = 4.5;
     do{
-        // if(ope_cnt%10000 == 0){
-        //     ll sum = 0;
-        //     for(int i=0; i<M; i++){
-        //         if(i) sum += (operated[i] - operated[i-1])*(operated[i] - operated[i-1]);
-        //         cout << operated[i] << " \n"[i+1 == M];
-        //     }
-        //     cout << sum <<" " << score.second << endl;
-        //     // cout << score.first << " " << score.second << " " << *operated_dif.begin() << " " << score.second+move_sum << endl;
-        // }
         operation();
         ope_cnt++;
         time = (duration_cast<microseconds>(system_clock::now() - STARTCLOCK).count() * 1e-6);
