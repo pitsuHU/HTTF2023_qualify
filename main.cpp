@@ -96,7 +96,9 @@ double calc_Eval(double x){
 
 void make_first(){
     for(int i=0; i<M; i++){
-        one_count[i] = randXor()%(E+1);
+        if(i == 0) one_count[i] = 0;
+        else if(i == M-1) one_count[i] = E;
+        else one_count[i] = randXor()%(E+1);
     }
     sort(one_count.begin(),one_count.end());
     for(int i=0; i<M; i++){
@@ -140,8 +142,9 @@ void operation(){
         }else{
             area = one_count[idx] - 0;
         }
-        int move = randXor()%area;
-        move %= 5;
+        int move;
+        if(area) move = randXor()%area;
+        else move = 0;
         one_count[idx] -= move;
         operated[idx] = calc_1_num(one_count[idx]);
     }else{
@@ -152,8 +155,9 @@ void operation(){
         }else{
             area = E - one_count[idx];
         }
-        int move = randXor()%area;
-        move %= 5;
+        int move;
+        if(area) move = randXor()%area;
+        else move = 0;
         one_count[idx] += move;
         operated[idx] = calc_1_num(one_count[idx]);
     }
@@ -222,15 +226,17 @@ void query(){
 }
 
 int main(){
-    input();
-    make_first();
-    solve();
-    // for(int i=0; i<M; i++){
-    //     cout << operated[i] << endl;
+    int a = calc_Eval(0);
+    cout << a << endl;
+    // input();
+    // make_first();
+    // solve();
+    // // for(int i=0; i<M; i++){
+    // //     cout << operated[i] << endl;
+    // // }
+    // first_output();
+    // for(int i=0; i<Q; i++){
+    //     query();
     // }
-    first_output();
-    for(int i=0; i<Q; i++){
-        query();
-    }
     return 0;
 }
