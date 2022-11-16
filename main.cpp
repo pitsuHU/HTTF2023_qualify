@@ -169,7 +169,7 @@ void operation(){
         dif_add.emplace_back(res);
     }
     double res = Eval();
-    if(res < 0 || ope_cnt%100 == 0){
+    if(res < 0){
         // 更新
         score += res;
         // cout << ope_cnt << " : " << score << endl;
@@ -183,7 +183,7 @@ void operation(){
 void solve(){
     auto STARTCLOCK = system_clock::now();
     double time = 0.0;
-    const static double ENDTIME = 4.5;
+    const static double ENDTIME = 1.0;
     do{
         operation();
         ope_cnt++;
@@ -191,14 +191,156 @@ void solve(){
     }while(time < ENDTIME);
 }
 
+string make_even_G(int cnt){
+    priority_queue<P,vector<P>,greater<>> que;
+    for(int i=0; i<N; i++){
+        que.emplace(0,i);
+    }
+    vector<vector<bool>> used(N,vector<bool>(N));
+    for(int i=0; i<cnt; i++){
+        P v1 = que.top();
+        que.pop();
+        queue<P> nque;
+        while(que.size()){
+            P v2 = que.top();
+            que.pop();
+            if(!used[v1.second][v2.second]){
+                used[v1.second][v2.second] = true;
+                used[v2.second][v1.second] = true;
+                nque.emplace(v2.first+1,v2.second);
+                nque.emplace(v1.first+1,v1.second);
+                break;
+            }
+            nque.emplace(v2);
+        }
+        while(nque.size()){
+            que.emplace(nque.front());
+            nque.pop();
+        }
+    }
+    string S = "";
+    for(int i=0; i<N; i++){
+        for(int j=i+1; j<N; j++){
+            if(used[i][j]) S += '1';
+            else S += '0';
+        }
+    }
+    return S;
+}
+
+string make_star_G(int cnt){
+    int temp = cnt;
+    vector<vector<bool>> used(N,vector<bool>(N));
+    for(int k=0; k<N; k++){
+        if(temp == 0) break;
+        for(int i=0; i<k; i++){
+            for(int j=i+1; j<k; j++){
+                if(temp == 0) break;
+                if(!used[i][j]){
+                    used[i][j] = used[j][i] = true;
+                    temp--;
+                }
+            }
+        }
+    }
+    string S = "";
+    for(int i=0; i<N; i++){
+        for(int j=i+1; j<N; j++){
+            if(used[i][j]) S += '1';
+            else S += '0';
+        }
+    }
+    return S;
+}
+
 void first_output(){
     cout << N << endl;
     for(int i=0; i<M; i++){
-        G[i] = string(one_count[i],'1') + string(E-one_count[i],'0');
+        if(i%2 == 0){
+            G[i] = make_star_G(one_count[i]);
+        }else{
+            G[i] = make_even_G(one_count[i]);
+        }
         cout << G[i] << endl;
+        // cout << "# " << one_count[i] << endl;
+        // vector<vector<bool>> temp(N,vector<bool>(N));
+        // int cnt = 0;
+        // for(int j=0; j<N; j++){
+        //     for(int k=j+1; k<N; k++){
+        //         if(G[i][cnt] == '1'){
+        //             temp[j][k] = temp[k][j] = true;
+        //         }
+        //         cnt++;
+        //     }
+        // }
+        // for(int j=0; j<N; j++){
+        //     string S = "";
+        //     for(int k=0; k<N; k++){
+        //         if(temp[j][k]) S += '1';
+        //         else S += '0';
+        //     }
+        //     cout << "# " << S << endl;
+        // }
     }
 }
 
+int cnt_diff(vector<int> &cnt_S,int idx){
+    vector<int> cnt_idx(N);
+    {
+        int cnt = 0;
+        for(int i=0; i<N; i++){
+            for(int j=i+1; j<N; j++){
+                if(G[idx][cnt] == '1'){
+                    cnt_idx[i]++;
+                    cnt_idx[j]++;
+                }
+                cnt++;
+            }
+        }
+    }
+    for(int i=0; i<N; i++){
+        cnt_idx[i] = (1-error)*cnt_idx[i] + error*(N-cnt_idx[i]);
+        // cnt_idx[i] = calc_1_num(cnt_idx[i]);
+    }
+    sort(cnt_idx.begin(),cnt_idx.end());
+    cout << "#" << idx;
+    for(int i=0; i<N; i++){
+        cout << " " << cnt_idx[i];
+    }
+    cout << endl;
+    int res = 0;
+    for(int i=0; i<N; i++){
+        res += abs(cnt_S[i]-cnt_idx[i]);
+    }
+    return res;
+}
+
+int is_even(string S,int pre, int aft){
+    vector<int> cnt_S(N);
+    {
+        int cnt = 0;
+        for(int i=0; i<N; i++){
+            for(int j=i+1; j<N; j++){
+                if(S[cnt] == '1'){
+                    cnt_S[i]++;
+                    cnt_S[j]++;
+                }
+                cnt++;
+            }
+        }
+    }
+    sort(cnt_S.begin(),cnt_S.end());
+    cout << "#";
+    for(int i=0; i<N; i++){
+        cout << " " << cnt_S[i];
+    }
+    cout << endl;
+    if(cnt_diff(cnt_S,pre) < cnt_diff(cnt_S,aft)){
+        return pre;
+    }else{
+        return aft;
+    }
+}
 
 void query(){
     string S;
@@ -216,27 +358,13 @@ void query(){
         cout << 0 << endl;
         return;
     }
-    int dist1 = cnt - operated[res-1];
-    int dist2 = operated[res] - cnt;
-    if(dist1 < dist2){
-        cout << res-1 << endl;
-    }else{
-        cout << res << endl;
-    }
+    cout << is_even(S,res-1,res) << endl;
 }
 
 int main(){
     input();
     make_first();
     solve();
-    // cout << ope_cnt << endl;
-    // cout << ideal_dif << endl;
-    // for(int i=0; i<M; i++){
-    //     cout << one_count[i] << endl;
-    // }
-    // for(int i=1; i<M; i++){
-    //     cout << operated[i]-operated[i-1] << endl;
-    // }
     first_output();
     for(int i=0; i<Q; i++){
         query();
